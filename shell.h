@@ -1,5 +1,5 @@
-#define SHELL_H
 #ifndef SHELL_H
+#define SHELL_H
 
 #include <stdlib.h>
 #include <string.h>
@@ -17,10 +17,12 @@
 
 
 /**
- * struct builtins -  builtins data's struct
- * @builtin: name of the builtin
- * @function: the function to be called for each associated builtin
+ * struct builtins -  This is the builtins data's struct
+ * @builtin: List the names of the builtin
+ * @function: This is the function to be called for each associated builtin
  */
+
+
 
 typedef struct builtins
 {
@@ -30,13 +32,14 @@ int (*function)(data_of_program *data);
 
 
 
-/** 
- * @program_name:the executable's name
- * @env: the environ's duplicate
- * @input_line: pointer for _getline input
- * struct info- program's data struct
- * @alias_list: aliases pointers' array.
- * @command_name: pointer to the user's first command
+/**
+ * contains executables prototypes
+ * _program_name: This is the executable's name
+ * @env: This is the environ's duplicate
+ * @input_line: This is the pointer for _getline input
+ * struct info- This is the program's data struct
+ * @alias_list: This is the aliases pointers' array.
+ * @command_name: This is the pointer to the user's first command
  * @tokens: tokenized input's arrays pointer
  * @exec_counter: number of comands to be executed
  * @file_descriptor: descriptor of commands input
