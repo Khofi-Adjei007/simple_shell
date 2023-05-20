@@ -13,7 +13,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-
+#include "macros.h"
 
 /**
  * struct builtins -  This is the builtins data's struct
