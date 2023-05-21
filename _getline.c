@@ -1,90 +1,170 @@
 #include "shell.h"
 
+/**
+ * input_buf - Read input from stdin into the buffer
+ * @info: Struct parameter
+ * @buf: Buffer's address
+ * @len: len var's address
+ *
+ * Return: Bytes read
+ */
+ssize_t input_buf(info_t *info, char **buf, size_t *len)
+{
+	ssize_t r = 0;
+	size_t len_p = 0;
+
+	if (!*len)
+	{
+		free(*buf);
+		*buf = NULL;
+		signal(SIGINT, sigintHandler);
+#if USE_GETLINE
+		r = getline(buf, &len_p, stdin);
+#else
+		r = _getline(info, buf, &len_p);
+#endif
+		if (r > 0)
+		{
+			if ((*buf)[r - 1] == '\n')
+			{
+				(*buf)[r - 1] = '\0';
+				r--;
+			}
+			info->linecount_flag = 1;
+			remove_comments(*buf);
+			build_history_list(info, *buf, info->histcount++);
+			*len = r;
+			info->cmd_buf = buf;
+		}
+	}
+	return (r);
+}
 
 /**
-* _getline - This read's the line from the prompt.
-* @data: Here lies the program's data struct.
-* Return: This return's the counting bytes.
-*/
-
-
-int _getline(data_of_program *data)
+ * get_input - Get input from the buffer
+ * @info: Struct parameter
+ *
+ * Return: Bytes read
+ */
+ssize_t get_input(info_t *info)
 {
-char buff[BUFFER_SIZE] = {'\0'};
-static char *array_commands[25] = {NULL};
-static char array_operators[25] = {'\0'};
-ssize_t bytes_read, n = 0;
+	static char *buf;
+	static size_t i, j, len;
+	ssize_t r = 0;
+	char **buf_p = &(info->arg), *p;
 
-if (!array_commands[0] || (array_operators[0] == '&' && errno != 0) ||
-(array_operators[0] == '|' && errno == 0))
-{
-for (n = 0; array_commands[n]; n++)
-{
-free(array_commands[n]);
-array_commands[n] = NULL;
+	_putchar(BUF_FLUSH);
+	r = input_buf(info, &buf, &len);
+	if (r == -1)
+		return (-1);
+	if (len)
+	{
+		j = i;
+		p = buf + i;
+
+		check_chain(info, buf, &j, i, len);
+		while (j < len)
+		{
+			if (is_chain(info, buf, &j))
+				break;
+			j++;
+		}
+
+		i = j + 1;
+		if (i >= len)
+		{
+			i = len = 0;
+			info->cmd_buf_type = CMD_NORM;
+		}
+
+		*buf_p = p;
+		return (_strlen(p));
+	}
+
+	*buf_p = buf;
+	return (r);
 }
-
-bytes_read = read(data->file_descriptor, &buff, BUFFER_SIZE - 1);
-if (bytes_read == 0)
-return (-1);
-
-n = 0;
-do {
-array_commands[n] = str_duplicate(_strtok(n ? NULL : buff, "\n;"));
-n = check_logic_ops(array_commands, n, array_operators);
-} while (array_commands[n++]);
-}
-
-data->input_line = array_commands[0];
-for (n = 0; array_commands[n]; n++)
-{
-array_commands[n] = array_commands[n + 1];
-array_operators[n] = array_operators[n + 1];
-}
-
-return (str_length(data->input_line));
-}
-
 
 /**
-* check_logic_ops - used to identify and split for '||' and '&&' operators
-* @array_commands: array of commands.
-* @n: The index to be checked in the array_commands
-* @array_operators: each previous command logical operators' array
-*
-* Return: index of the last command in the array_commands.
-*/
+ * read_buf - Read a buffer
+ * @info: Struct parameter
+ * @buf: Buffer
+ * @i: Size
+ *
+ * Return: r
+ */
+ssize_t read_buf(info_t *info, char *buf, size_t *i)
+{
+	ssize_t r = 0;
 
+	if (*i)
+		return (0);
+	r = read(info->readfd, buf, READ_BUF_SIZE);
+	if (r >= 0)
+		*i = r;
+	return (r);
+}
 
-int check_logic_ops(char *array_commands[], int n, char array_operators[])
+/**
+ * _getline - Get the next line of input from STDIN
+ * @info: Struct parameter
+ * @ptr: Address of pointer to buffer, preallocated or NULL
+ * @length: Size of preallocated ptr buffer if not NULL
+ *
+ * Return: s
+ */
+int _getline(info_t *info, char **ptr, size_t *length)
 {
-int m;
-char *temp = NULL;
+	static char buf[READ_BUF_SIZE];
+	static size_t i, len;
+	size_t k;
+	ssize_t r = 0, s = 0;
+	char *p = NULL, *new_p = NULL, *c;
 
-for (m = 0; array_commands[n] != NULL  && array_commands[n][m]; m++)
+	p = *ptr;
+	if (p && length)
+		s = *length;
+	if (i == len)
+		i = len = 0;
+
+	r = read_buf(info, buf, &len);
+	if (r == -1 || (r == 0 && len == 0))
+		return (-1);
+
+	c = _strchr(buf + i, '\n');
+	k = c ? 1 + (unsigned int)(c - buf) : len;
+	new_p = _realloc(p, s, s ? s + k : k + 1);
+	if (!new_p)
+	{
+		if (p)
+			free(p);
+		return (-1);
+	}
+
+	if (s)
+		_strncat(new_p, buf + i, k - i);
+	else
+		_strncpy(new_p, buf + i, k - i + 1);
+
+	s += k - i;
+	i = k;
+	p = new_p;
+
+	if (length)
+		*length = s;
+	*ptr = p;
+	return (s);
+}
+
+/**
+ * sigintHandler - Block SIGINT signal
+ * @sig_num: The signal number
+ *
+ * Return: void
+ */
+void sigintHandler(__attribute__((unused)) int sig_num)
 {
-if (array_commands[n][m] == '&' && array_commands[n][m + 1] == '&')
-{
-temp = array_commands[n];
-array_commands[n][m] = '\0';
-array_commands[n] = str_duplicate(array_commands[n]);
-array_commands[n + 1] = str_duplicate(temp + m + 2);
-n++;
-array_operators[n] = '&';
-free(temp);
-m = 0;
+	_puts("\n$ ");
+	_putchar(BUF_FLUSH);
 }
-if (array_commands[n][m] == '|' && array_commands[n][m + 1] == '|')
-{
-temp = array_commands[n];
-array_commands[n][m] = '\0';
-array_commands[n] = str_duplicate(array_commands[n]);
-array_commands[n + 1] = str_duplicate(temp + m + 2);
-n++;
-array_operators[n] = '|';
-free(temp);
-m = 0;
-}
-}
-return (n);
-}
+
