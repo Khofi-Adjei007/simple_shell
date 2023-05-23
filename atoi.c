@@ -1,45 +1,48 @@
 #include "shell.h"
 
 /**
-* interactive - checks if the shell is in interactive mode
-* @info: pointer to the info_t struct
-*
-* Return: 1 if in interactive mode, 0 otherwise
+* is_interactive - checks if the shell is running in interactive mode
+* @info: pointer to the struct containing relevant information
+* Returns: 1 if the shell is running in interactive mode, 0 otherwise
 */
 
-int interactive(ino_t *info)
+int interactive(info_t *info)
 {
-return (isatty(STDIN_FILENO) && info->readfd <= 2);
+if (isatty(STDIN_FILENO))
+{
+if (info->readfd <= 2)
+	return (1);
+}
+return (0);
 }
 
 /**
-* is_delim - checks if a character is a delimiter
+* is_delim - determines whether a character is a delimiter
 * @c: the character to check
-* @delim: the delimiter string
-*
+* @delimiter: the string of delimiters to compare against
 * Return: 1 if the character is a delimiter, 0 otherwise
 */
 
 int is_delim(char c, char *delim)
 {
 while (*delim)
-{
 if (*delim++ == c)
-return (1);
-}
+	return (1);
 return (0);
 }
 
+
 /**
-* is_alpha - checks if a character is alphabetic
-* @c: the character to check
-*
+* _isalpha - checks if a character is an alphabetic character
+* @c: the character to be checked
 * Return: 1 if the character is alphabetic, 0 otherwise
 */
 
-int is_alpha(int c)
+int _isalpha(char c)
 {
-if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
+/* Check if the character is within the range of alphabets */
+/* in either uppercase or lowercase */
+if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
 return (1);
 else
 return (0);
@@ -49,34 +52,42 @@ return (0);
 * _atoi - converts a string to an integer
 * @s: the string to be converted
 *
-* Return: the converted number if successful, 0 otherwise
+* Return: 0 if the string does not contain any numbers, the converted
+*  integer value otherwise
 */
-
 int _atoi(char *s)
 {
-int ka, sign = 1, flag = 0, output;
-unsigned int result = 0;
+int result = 0;
+int sign = 1;
+int ka = 0;
 
-for (ka = 0; s[ka] != '\0' && flag != 2; ka++)
+/* Check for negative sign */
+if (s[0] == '-')
 {
-if (s[ka] == '-')
-sign *= -1;
+sign = -1;
+ka++;
+}
 
+/* Iterate through the string */
+while (s[ka] != '\0')
+{
+/* Check if the current character is a digit */
 if (s[ka] >= '0' && s[ka] <= '9')
 {
-flag = 1;
-result *= 10;
-result += (s[ka] - '0');
+/* Multiply the result by 10 and add the digit */
+result = result * 10 + (s[ka] - '0');
 }
-else if (flag == 1)
-flag = 2;
-}
-
-if (sign == -1)
-output = -result;
 else
-output = result;
+{
+/* Invalid character found, return 0 */
+return (0);
+}
+ka++;
+}
 
-return (output);
+/* Apply the sign to the result */
+result *= sign;
+
+return (result);
 }
 
