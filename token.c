@@ -33,7 +33,7 @@ void tokenize(data_of_program *data)
 	}
 
 	dex = 0;
-	data->tokens[dent] = str_duplicate(_strtok(data->input_line, delimiter));
+	data->tokens[dex] = str_duplicate(_strtok(data->input_line, delimiter));
 	data->command_name = str_duplicate(data->tokens[0]);
 	while (data->tokens[dex++])
 	{
