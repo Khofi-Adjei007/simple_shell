@@ -1,156 +1,124 @@
 #include "shell.h"
 
 /**
-* get_environment_variable -
-* Retrieves the value of an environment variable
-* @variable: The name of the environment variable
-* @data: Pointer to the program's data structure
+* env_get_key - Retrieve the value of
+* an environment variable.
+* @key: The environment variable to retrieve.
+* @data: Pointer to the program's data structure.
 *
-* This function retrieves the
-* value of the specified environment variable.
-* It searches through the environment
-* variables stored in the program's data
-* structure and returns a pointer to the
-* value if found. If the variable does
-* not exist, it returns NULL.
-*
-* Return: (A pointer to the value of the
-* environment variable) or (NULL if not found).
+* Return: A pointer to the value of the
+* variable or NULL if it doesn't exist.
 */
 
-char *get_environment_variable(char *variable, data_of_program *data)
+char *env_get_key(char *key, data_of_program *data)
 {
-int ak, variable_length = 0;
+int ak, key_length = 0;
 
-/* Validate arguments */
-if (variable == NULL || data->environment == NULL)
+/* Validate the arguments */
+if (key == NULL || data->env == NULL)
 return (NULL);
 
-/* Determine the length of the variable name */
-variable_length = str_length(variable);
+/* Calculate the length of the requested variable */
+key_length = str_length(key);
 
-for (ak = 0; data->environment[ak]; ak++)
+for (ak = 0; data->env[ak]; ak++)
 {
-/* Iterate through the environment and check for a match */
-if (str_compare(variable, data->environment[ak], variable_length) &&
-data->environment[ak][variable_length] == '=')
+/* Iterate through the environment variables and check for a match */
+if (str_compare(key, data->env[ak], key_length) &&
+data->env[ak][key_length] == '=')
 {
-/* Return the value of the variable */
-return (data->environment[ak] + variable_length + 1);
+/* Return the value of the variable (key=value format) */
+return (data->env[ak] + key_length + 1);
 }
 }
 
-/* Variable not found */
+/* Return NULL if the variable was not found */
 return (NULL);
 }
 
 /**
-* set_environment_variable - Sets or overwrites
-* the value of an environment variable
-* @variable: The name of the variable to set
-* @value: The new value of the variable
-* @data: Pointer to the program's data structure
+* env_set_key - Overwrite the value of an environment
+* variable or create it if it doesn't exist.
+* @key: Name of the variable to set.
+* @value: New value for the variable.
+* @data: Pointer to the program's data structure.
 *
-* This function sets or overwrites the value
-* of the specified environment variable.
-* It searches through the environment variables
-* stored in the program's data structure
-* and either sets the value if the variable already
-* exists or creates a new variable
-* if it doesn't exist. If successful, it returns 0.
-* If any of the parameters are NULL,
-* it returns 1. If there is an error, it returns 2.
-*
-* Return: (0 on success), (1 if parameters are NULL), (2 on error).
+* Return: 1 if the parameters are NULL,
+* 2 if there is an error, or 0 if successful.
 */
-int set_environment_variable(char *variable,
-char *value, data_of_program *data)
+int env_set_key(char *key, char *value, data_of_program *data)
 {
-int ak, variable_length = 0, is_new_variable = 1;
+int ak, key_length = 0, is_new_key = 1;
 
-/* Validate arguments */
-if (variable == NULL || value == NULL || data->environment == NULL)
+/* Validate the arguments */
+if (key == NULL || value == NULL || data->env == NULL)
 return (1);
 
-/* Determine the length of the variable name */
-variable_length = str_length(variable);
+/* Calculate the length of the variable */
+key_length = str_length(key);
 
-for (ak = 0; data->environment[ak]; ak++)
+for (ak = 0; data->env[ak]; ak++)
 {
-/* Iterate through the environment and check for a match */
-if (str_compare(variable, data->environment[ak], variable_length) &&
-data->environment[ak][variable_length] == '=')
+/* Iterate through the environment variables and check for a match */
+if (str_compare(key, data->env[ak], key_length) &&
+data->env[ak][key_length] == '=')
 {
-/* Variable already exists, overwrite its value */
-is_new_variable = 0;
-free(data->environment[ak]);
+/* If the key already exists, free the current variable */
+is_new_key = 0;
+free(data->env[ak]);
 break;
 }
 }
 
-/* Create a string of the form "variable=value" */
-data->environment[ak] = str_concat(str_duplicate(variable), "=");
-data->environment[ak] = str_concat(data->environment[ak], value);
+/* Create a new string in the format "key=value" */
+data->env[ak] = str_concat(str_duplicate(key), "=");
+data->env[ak] = str_concat(data->env[ak], value);
 
-if (is_new_variable)
+if (is_new_key)
 {
-/* If it's a new variable, set the next position to NULL */
-data->environment[ak + 1] = NULL;
+/* If the variable is new, add a NULL value at the end of the list */
+data->env[ak + 1] = NULL;
 }
 
 return (0);
 }
 
 /**
-* remove_environment_variable -
-* Removes an environment variable
-* @variable: The variable to remove
-* @data: Pointer to the program's data structure
+* env_remove_key - Remove a key from the environment.
+* @key: The key to remove.
+* @data: Pointer to the program's data structure.
 *
-* This function removes the specified
-* environment variable from the program's
-* data structure. It searches through the
-* environment variables and if a match
-* is found, it removes the variable and
-* shifts the remaining variables down.
-* If successful, it returns 1. If the
-* variable does not exist, it returns 0.
-* If any of the parameters are NULL, it returns 0.
-*
-* Return: (1 if the variable was removed),
-* (0 if the variable does not exist or parameters are NULL).
+* Return: 1 if the key was removed, 0 if the key does not exist.
 */
-
-int remove_environment_variable(char *variable, data_of_program *data)
+int env_remove_key(char *key, data_of_program *data)
 {
-int ak, variable_length = 0;
+int ak, key_length = 0;
 
-/* Validate arguments */
-if (variable == NULL || data->environment == NULL)
+/* Validate the arguments */
+if (key == NULL || data->env == NULL)
 return (0);
 
-/* Determine the length of the variable name */
-variable_length = str_length(variable);
+/* Calculate the length of the key */
+key_length = str_length(key);
 
-for (ak = 0; data->environment[ak]; ak++)
+for (ak = 0; data->env[ak]; ak++)
 {
-/* Iterate through the environment and check for a match */
-if (str_compare(variable, data->environment[ak], variable_length) &&
-data->environment[ak][variable_length] == '=')
+/* Iterate through the environment variables and check for a match */
+if (str_compare(key, data->env[ak], key_length) &&
+data->env[ak][key_length] == '=')
 {
-/* Variable exists, remove it and shift remaining variables */
-free(data->environment[ak]);
+/* If the key exists, remove it */
+free(data->env[ak]);
 
-/* Shift remaining variables down by one position */
+/* Shift the remaining keys one position down */
 ak++;
-for (; data->environment[ak]; ak++)
+for (; data->env[ak]; ak++)
 {
-data->environment[ak - 1] = data->environment[ak];
+data->env[ak - 1] = data->env[ak];
 }
 
-/* Set the last position to NULL */
-data->environment[ak - 1] = NULL;
-
+/* Set the NULL value at the new end of the list */
+data->env[ak - 1] = NULL;
 return (1);
 }
 }
@@ -159,23 +127,19 @@ return (0);
 }
 
 /**
-* print_environment - Prints the current environment variables
-* @data: Pointer to the program's data structure
+* print_environ - Print the current environment variables.
+* @data: Pointer to the program's data structure.
 *
-* This function prints the current environment variables stored in the
-* program's data structure. It iterates through the environment variables
-* and prints each one followed by a newline character.
-*
-* Return: None
+* Return: None.
 */
-void print_environment(data_of_program *data)
+void print_environ(data_of_program *data)
 {
 int ka;
 
-for (ka = 0; data->environment[ka]; ka++)
+for (ka = 0; data->env[ka]; ka++)
 {
-_print(data->environment[ka]);
+/* Iterate through the environment variables and print each one */
+_print(data->env[ka]);
 _print("\n");
 }
 }
-

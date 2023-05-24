@@ -1,25 +1,18 @@
 #include "shell.h"
 
 /**
-* builtins_list - Search for a match and execute the
-* associated built-in command
-* @data: Pointer to the program's data structure
+* builtins_list - Search for a match and execute
+* the associated built-in function.
+* @data: Pointer to the program's data structure.
 *
-* This function searches for a match between the
-* given command and the available
-* built-in commands. If a match is found, it
-* executes the corresponding function
-* and returns the return value of that function.
-* If there is no match, it returns -1.
-*
-* Return: Returns the return value of the executed
+* Return: The return value of the executed
 * function if there is a match,
-* otherwise returns -1.
+* otherwise -1.
 */
 
 int builtins_list(data_of_program *data)
 {
-int ak;
+int ka;
 builtins options[] = {
 {"exit", builtin_exit},
 {"help", builtin_help},
@@ -31,18 +24,17 @@ builtins options[] = {
 {NULL, NULL}
 };
 
-/* Iterate through the options structure */
-for (ak = 0; options[ak].builtin != NULL; ak++)
+/* Walk through the structure */
+for (ka = 0; options[ka].builtin != NULL; ka++)
 {
-/* Check if there is a match between the given command and a built-in */
-if (str_compare(options[ak].builtin, data->command_name, 0))
+/* If there is a match between the given command and a built-in */
+if (str_compare(options[ka].builtin, data->command_name, 0))
 {
-/* Execute the associated function and return its return value */
-return (options[ak].function(data));
+/* Execute the function and return its return value */
+return (options[ka].function(data));
 }
-}
-
 /* If there is no match, return -1 */
+}
 return (-1);
 }
 

@@ -1,36 +1,36 @@
 #include "shell.h"
 
 /**
-* displayAlias - display, add, or remove aliases
-* @programData: struct containing program data
-* @aliasName: name of the alias to be displayed
-* Return: 0 if successful, otherwise returns a non-zero value
+* print_alias - Display aliases or a specific alias.
+* @data: Pointer to the program's data structure.
+* @alias: Name of the alias to be printed (optional).
+*
+* Return: 0 if successful, or a non-zero value if an error occurred.
 */
 
-int displayAlias(data_of_program *programData, char *aliasName)
+int print_alias(data_of_program *data, char *alias)
 {
-int ak, ka, aliasLength;
-char buffer[300] = {'\0'};
+int ka, ak, alias_length;
+char buffer[250] = {'\0'};
 
-if (programData->aliasList)
+if (data->alias_list)
 {
-aliasLength = str_length(aliasName);
-for (ak = 0; programData->aliasList[ak]; ak++)
+alias_length = str_length(alias);
+for (ka = 0; data->alias_list[ka]; ka++)
 {
-if (!aliasName || (str_compare(programData->aliasList[ak],
-aliasName, aliasLength)
-&&	programData->aliasList[ak][aliasLength] == '='))
+if (!alias || (str_compare(data->alias_list[ka], alias, alias_length)
+&& data->alias_list[ka][alias_length] == '='))
 {
-for (ka = 0; programData->aliasList[ak][ka]; ka++)
+for (ak = 0; data->alias_list[ka][ak]; ak++)
 {
-buffer[ka] = programData->aliasList[ak][ka];
-if (programData->aliasList[ak][ka] == '=')
-	break;
+buffer[ak] = data->alias_list[ka][ak];
+if (data->alias_list[ka][ak] == '=')
+break;
 }
-buffer[ka + 1] = '\0';
-addToBuffer(buffer, "'");
-addToBuffer(buffer, programData->aliasList[ak] + ka + 1);
-addToBuffer(buffer, "'\n");
+buffer[ak + 1] = '\0';
+buffer_add(buffer, "'");
+buffer_add(buffer, data->alias_list[ka] + ak + 1);
+buffer_add(buffer, "'\n");
 _print(buffer);
 }
 }
@@ -40,78 +40,91 @@ return (0);
 }
 
 /**
-* getAliasValue - get the value of an alias
-* @programData: struct containing program data
-* @aliasName: name of the alias requested
-* Return: the value of the alias if found, otherwise returns NULL
+* get_alias - Get the value of a specific alias.
+* @data: Pointer to the program's data structure.
+* @name: Name of the requested alias.
+*
+* Return: The value of the requested alias if found, or NULL otherwise.
 */
-
-char *getAliasValue(data_of_program *programData, char *aliasName)
+char *get_alias(data_of_program *data, char *name)
 {
-int ak, aliasLength;
+int ka, alias_length;
 
 /* Validate the arguments */
-if (aliasName == NULL || programData->aliasList == NULL)
+if (name == NULL || data->alias_list == NULL)
 return (NULL);
 
-aliasLength = str_length(aliasName);
+alias_length = str_length(name);
 
-for (ak = 0; programData->aliasList[ak]; ak++)
+for (ka = 0; data->alias_list[ka]; ka++)
 {
-if (str_compare(aliasName, programData->aliasList[ak], aliasLength) &&
-programData->aliasList[ak][aliasLength] == '=')
+if (str_compare(name, data->alias_list[ka], alias_length) &&
+data->alias_list[ka][alias_length] == '=')
 {
-return (programData->aliasList[ak] + aliasLength + 1);
+/* Return the value of the key "NAME=" when found */
+return (data->alias_list[ka] + alias_length + 1);
 }
 }
+
+/* Return NULL if the alias was not found */
 return (NULL);
 }
 
 /**
-* setAlias - add or override an alias
-* @aliasString: alias to be set in the format (name='value')
-* @programData: struct containing program data
-* Return: 0 if successful, otherwise returns a non-zero value
+* set_alias - Add or override an alias.
+* @alias_string: Alias to be set in the form "name='value'".
+* @data: Pointer to the program's data structure.
+*
+* Return: 0 if successful, or a non-zero value if an error occurred.
 */
-
-int setAlias(char *aliasString, data_of_program *programData)
+int set_alias(char *alias_string, data_of_program *data)
 {
-int ak, ka;
-char buffer[300] = {'0'}, *temp = NULL;
+int ka, ak;
+char buffer[250] = {'0'}, *temp = NULL;
 
 /* Validate the arguments */
-if (aliasString == NULL ||  programData->aliasList == NULL)
+if (alias_string == NULL || data->alias_list == NULL)
 return (1);
 
-for (ak = 0; aliasString[ak]; ak++)
+/* Iterate over the alias string to find the '=' character */
+for (ka = 0; alias_string[ka]; ka++)
 {
-if (aliasString[ak] != '=')
-buffer[ak] = aliasString[ak];
+if (alias_string[ka] != '=')
+buffer[ka] = alias_string[ka];
 else
 {
-temp = getAliasValue(programData, aliasString + ak + 1);
+/* Search if the value of the alias is another alias */
+temp = get_alias(data, alias_string + ka + 1);
 break;
 }
 }
 
-for (ka = 0; programData->aliasList[ka]; ka++)
+/* Iterate over the alias list to check for a matching variable name */
+for (ak = 0; data->alias_list[ak]; ak++)
 {
-if (str_compare(buffer, programData->aliasList[ka], ak) &&
-programData->aliasList[ka][ak] == '=')
+if (str_compare(buffer, data->alias_list[ak], ka) &&
+data->alias_list[ak][ka] == '=')
 {
-free(programData->aliasList[ka]);
+/* If the alias already exists, free the old value */
+free(data->alias_list[ak]);
 break;
 }
 }
 
+/* Add or update the alias */
 if (temp)
 {
-bufferAdd(buffer, "=");
-bufferAdd(buffer, temp);
-programData->aliasList[ka] = strDuplicate(buffer);
+/* If the alias already exists, update it */
+buffer_add(buffer, "=");
+buffer_add(buffer, temp);
+data->alias_list[ak] = str_duplicate(buffer);
 }
 else
-programData->aliasList[ka] = strDuplicate(aliasString);
+{
+/* If the alias does not exist, add it */
+data->alias_list[ak] = str_duplicate(alias_string);
+}
+
 return (0);
 }
 
