@@ -11,7 +11,7 @@
 int print_alias(data_of_program *data, char *alias)
 {
 int ka, ak, alias_length;
-char buffer[250] = {'\0'};
+char buffer[300] = {'\0'};
 
 if (data->alias_list)
 {
